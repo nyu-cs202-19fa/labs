@@ -60,27 +60,27 @@ void list_dir(char* dirname, bool list_long, bool list_all, bool recursive);
 
 
 /*
- * Get username for uid. Return 0 on failure, 1 otherwise.
+ * Get username for uid. Return 1 on failure, 0 otherwise.
  */
 static int uname_for_uid(uid_t uid, char* buf, size_t buflen) {
     struct passwd* p = getpwuid(uid);
     if (p == NULL) {
-        return 0;
+        return 1;
     }
     strncpy(buf, p->pw_name, buflen);
-    return 1;
+    return 0;
 }
 
 /*
- * Get group name for gid. Return 0 on failure, 1 otherwise.
+ * Get group name for gid. Return 1 on failure, 0 otherwise.
  */
 static int group_for_gid(gid_t gid, char* buf, size_t buflen) {
     struct group* g = getgrgid(gid);
     if (g == NULL) {
-        return 0;
+        return 1;
     }
     strncpy(buf, g->gr_name, buflen);
-    return 1;
+    return 0;
 }
 
 /*
