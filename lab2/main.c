@@ -1,4 +1,3 @@
-#define _DEFAULT_SOURCE
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -63,12 +62,11 @@ void list_dir(char* dirname, bool list_long, bool list_all, bool recursive);
 /*
  * Get username for uid. Return 1 on failure, 0 otherwise.
  */
-static int uname_for_uid(uid_t uid, char* buf) {
+static int uname_for_uid(uid_t uid, char* buf, size_t buflen) {
     struct passwd* p = getpwuid(uid);
     if (p == NULL) {
         return 1;
     }
-    size_t buflen = strlen(p->pw_name);
     strncpy(buf, p->pw_name, buflen);
     return 0;
 }
@@ -76,12 +74,11 @@ static int uname_for_uid(uid_t uid, char* buf) {
 /*
  * Get group name for gid. Return 1 on failure, 0 otherwise.
  */
-static int group_for_gid(gid_t gid, char* buf) {
+static int group_for_gid(gid_t gid, char* buf, size_t buflen) {
     struct group* g = getgrgid(gid);
     if (g == NULL) {
         return 1;
     }
-    size_t buflen = strlen(g->gr_name);
     strncpy(buf, g->gr_name, buflen);
     return 0;
 }
@@ -186,7 +183,7 @@ int main(int argc, char* argv[]) {
     // This needs to be int since C does not specify whether char is signed or
     // unsigned.
     int opt;
-    bool list_long = false, list_all = false, recursive = false;
+    bool list_long = false, list_all = false;
     // We make use of getopt_long for argument parsing, and this
     // (single-element) array is used as input to that function. The `struct
     // option` helps us parse arguments of the form `--FOO`. Refer to `man 3
