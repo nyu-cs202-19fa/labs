@@ -383,16 +383,19 @@ static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable,
 
 vamapping virtual_memory_lookup(x86_64_pagetable* pagetable, uintptr_t va) {
     x86_64_pagetable* pt = pagetable;
-    x86_64_pageentry_t pe = PTE_W | PTE_U | PTE_P;
-    for (int i = 0; i <= 3 && (pe & PTE_P); ++i) {
-        pe = pt->entry[PAGEINDEX(va, i)] & ~(pe & (PTE_W | PTE_U));
+    x86_64_pageentry_t pe = 0;
+    uint8_t perms = PTE_W | PTE_U | PTE_P;
+
+    for (int i = 0; i <= 3 && (perms & PTE_P); ++i) {
+        pe = pt->entry[PAGEINDEX(va,i)];
+        perms &= PTE_FLAGS(pe);
         pt = (x86_64_pagetable*) PTE_ADDR(pe);
     }
     vamapping vam = { -1, (uintptr_t) -1, 0 };
-    if (pe & PTE_P) {
+    if (perms & PTE_P) {
         vam.pn = PAGENUMBER(pe);
         vam.pa = PTE_ADDR(pe) + PAGEOFFSET(va);
-        vam.perm = PTE_FLAGS(pe);
+        vam.perm = perms;
     }
     return vam;
 }
