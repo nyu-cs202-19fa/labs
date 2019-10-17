@@ -556,8 +556,7 @@ void memdump_virtual(x86_64_pagetable* pagetable, const char* name) {
 
     uint8_t owner = pageinfo[vam.pn].owner;
     uint8_t refcount = pageinfo[vam.pn].refcount;
-    uint8_t ua = vam.perm & PTE_U;
-    log_printf("%u %u %u ", owner, refcount, ua);
+    log_printf("%u %u %u ", owner, refcount, vam.perm);
   }
   log_printf("\n");
 }

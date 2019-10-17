@@ -14,12 +14,15 @@ PANIC_PREFIX = 'PANIC: Unexpected exception 52!'
 
 # Per-page state for a page in physical and virtual memory.
 PMEntry = namedtuple('PMEntry', ['owner', 'refcount'])
-VMEntry = namedtuple('VMEntry', ['owner', 'refcount', 'ua'])
+VMEntry = namedtuple('VMEntry', ['owner', 'refcount', 'ua', 'perm'])
 
 # A bunch of constants.
 PAGE_SIZE = 4096
 KERNEL_LIMIT = 0x100000 / PAGE_SIZE
 CGA_BLOCK = 0xB8000 / PAGE_SIZE
+PTE_P = 0x1
+PTE_W = 0x2
+PTE_U = 0x4
 
 # Offset into the start of kernel memory that should not be initially
 # owned by processes.
@@ -126,10 +129,12 @@ class MemMapInstance:
     
     def IsForkOK(self):
         # Checks to see if all processes' virtual address space starts
-        # at the same place.
+        # at the same place and, if the page is writable, that it's
+        # owned by the given process. (Handles shared, read-only pages.)
         for process_id, entries in self.vm_state.items():
             entry = entries[KERNEL_LIMIT]
-            if not entry.owner or entry.owner != process_id:
+            if not entry.owner or \
+                   (entry.owner != process_id and entry.perm & PTE_W):
                 return False
         return True
                
@@ -168,9 +173,10 @@ class MemMapTimeline:
 
                 data = []
                 for i in range(768):
-                    owner, refcount, ua = line_split[3 * i + 3:3 * i + 6]
+                    owner, refcount, perm = line_split[3 * i + 3:3 * i + 6]
                     data.append(VMEntry(int(owner), int(refcount),
-                                        int(ua)))
+                                        int(perm) & PTE_U,
+                                        int(perm)))
                 self.mem_data[tick].add_vm_state(process_id, data)
 	    elif line.startswith(PANIC_PREFIX):
 		self.panic = True;
