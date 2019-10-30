@@ -63,7 +63,7 @@ def run_ls_solution(flags, files):
     return out, rc
 
 
-def parse_cs202_output(output, list_long=False, recursive=False):
+def parse_cs202_output(output, omit_slash, list_long=False, recursive=False):
     lines = []
 
     for line in output.split('\n'):
@@ -72,8 +72,8 @@ def parse_cs202_output(output, list_long=False, recursive=False):
             continue
         if line[:4] == 'ls: ':
             continue
-        # if line[-1] == '/':
-        #     line = line[:-1]
+        if omit_slash and line[-1] == '/':
+            line = line[:-1]
         if list_long:
             words = line.split()
             if len(words) < 5:
@@ -151,7 +151,7 @@ def check_hack():
     return 1
 
 
-def check_files(files, list_long=False, show_all=False, recursive=False, human=False, fields=[], check_rc=False):
+def check_files(files, list_long=False, show_all=False, recursive=False, human=False, fields=[], check_rc=False, omit_slash=True):
     # returns 1 if the student's answer is correct, return 0 otherwise.
     flags = []
     if list_long:
@@ -169,7 +169,7 @@ def check_files(files, list_long=False, show_all=False, recursive=False, human=F
         return 0
 
     try:
-        student_res = (parse_cs202_output(out, list_long=list_long))
+        student_res = parse_cs202_output(out, list_long=list_long, omit_slash=omit_slash)
     except FormatError:
         print("An error occurred while parsing your output. Please check the output format.")
         return 0
@@ -178,7 +178,7 @@ def check_files(files, list_long=False, show_all=False, recursive=False, human=F
     out, rc_solution = run_ls_solution(flags, files)
 
     # out = run_ls_system(flags, files)
-    solution_res = (parse_cs202_output(out, list_long=list_long))
+    solution_res = parse_cs202_output(out, list_long=list_long, omit_slash=omit_slash)
     solution_res = sort_by_fname(solution_res)
 
     if check_rc:
@@ -207,6 +207,17 @@ def check_files(files, list_long=False, show_all=False, recursive=False, human=F
                     return 0
 
     return 1
+
+# check whether the student forget the slash after the folder.
+# return 0 if the student is correct. return -1 if the answer is not correct.
+def check_slash():
+    show_all = True
+    for list_long in [True, False]:
+        if (check_files(['test/hidden'], show_all=show_all, list_long=list_long, omit_slash=False) == 0 and
+            check_files(['test/hidden'], show_all=show_all, list_long=list_long, omit_slash=True) == 1):
+            print("Divergence versus our solution about the '/' at the end of a folder, deduct 5 points")
+            return -1
+    return 0
 
 
 def main():
@@ -293,6 +304,11 @@ def main():
     error_comb_score += check_files(dirs, check_rc=True) * 1
     score += error_comb_score
 
+    # penalties 
+
+    # deduct 5 points if the student forget to print '/'
+    score += 5 * check_slash()
+    
     print(f"Score: {score}")
     print("\n------------- extra credits ---------------")
     extra_score = 0
