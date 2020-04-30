@@ -20,7 +20,7 @@
 // block) if necessary.
 //
 // Returns:
-//	0 on success (but note that *ppdiskbno might equal 0).
+//	0 on success (but note that **ppdiskbno might equal 0).
 //	-ENOENT if the function needed to allocate an indirect block, but
 //		alloc was 0.
 //	-ENOSPC if there's no space on the disk for an indirect block.
